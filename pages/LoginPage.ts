@@ -21,11 +21,10 @@ export class LoginPage {
     this.productsSection = page.locator('#page-products');
     this.productsHeading = page.getByRole('heading', { name: 'Our Products' });
     this.usernameInput = page.getByRole('textbox', { name: 'Username' });
-    this.passwordInput = page.locator('#login-pass');
+    this.passwordInput = page.getByLabel('Password');
     this.signInButton = page.getByRole('button', { name: 'Sign In' });
     this.browseAsGuestButton = page.getByRole('button', { name: 'Browse as Guest' });
-    // Note: The broken app currently lacks an error container; locating by role="alert" or error class/id
-    this.errorMessage = page.locator('[role="alert"], .error-message, #login-error');
+    this.errorMessage = page.getByRole('alert');
   }
 
   async goto() {

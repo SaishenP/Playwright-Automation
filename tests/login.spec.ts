@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures/test-fixtures';
+import { test, expect } from './fixtures';
 
 test.describe('Login Feature', () => {
   // ── Positive Tests ──
@@ -9,8 +9,9 @@ test.describe('Login Feature', () => {
   }) => {
     await loginPage.login(testCredentials.email, testCredentials.pass);
 
+    // Assert user-visible outcomes rather than CSS classes
     await expect(loginPage.productsHeading).toBeVisible();
-    await expect(loginPage.loginSection).toHaveClass(/hidden/);
+    await expect(loginPage.signInButton).not.toBeVisible();
   });
 
   test('TC-LOGIN-002: Password input masks characters with type="password" [Regression — Known Bug]', async ({
@@ -27,8 +28,9 @@ test.describe('Login Feature', () => {
   }) => {
     await loginPage.signInButton.click();
 
-    await expect(loginPage.loginSection).not.toHaveClass(/hidden/);
-    await expect(loginPage.productsSection).toHaveClass(/hidden/);
+    // Assert user remains on login view, catalog is hidden, and error appears
+    await expect(loginPage.signInButton).toBeVisible();
+    await expect(loginPage.productsHeading).not.toBeVisible();
     await expect(loginPage.errorMessage).toBeVisible();
   });
 
@@ -39,8 +41,8 @@ test.describe('Login Feature', () => {
     await loginPage.passwordInput.fill(testCredentials.pass);
     await loginPage.signInButton.click();
 
-    await expect(loginPage.loginSection).not.toHaveClass(/hidden/);
-    await expect(loginPage.productsSection).toHaveClass(/hidden/);
+    await expect(loginPage.signInButton).toBeVisible();
+    await expect(loginPage.productsHeading).not.toBeVisible();
     await expect(loginPage.errorMessage).toBeVisible();
   });
 
@@ -51,8 +53,8 @@ test.describe('Login Feature', () => {
     await loginPage.usernameInput.fill(testCredentials.email);
     await loginPage.signInButton.click();
 
-    await expect(loginPage.loginSection).not.toHaveClass(/hidden/);
-    await expect(loginPage.productsSection).toHaveClass(/hidden/);
+    await expect(loginPage.signInButton).toBeVisible();
+    await expect(loginPage.productsHeading).not.toBeVisible();
     await expect(loginPage.errorMessage).toBeVisible();
   });
 
@@ -62,8 +64,8 @@ test.describe('Login Feature', () => {
   }) => {
     await loginPage.login(testCredentials.email, 'wrongpassword');
 
-    await expect(loginPage.loginSection).not.toHaveClass(/hidden/);
-    await expect(loginPage.productsSection).toHaveClass(/hidden/);
+    await expect(loginPage.signInButton).toBeVisible();
+    await expect(loginPage.productsHeading).not.toBeVisible();
     await expect(loginPage.errorMessage).toBeVisible();
   });
 
@@ -73,8 +75,8 @@ test.describe('Login Feature', () => {
   }) => {
     await loginPage.login('not-an-email', testCredentials.pass);
 
-    await expect(loginPage.loginSection).not.toHaveClass(/hidden/);
-    await expect(loginPage.productsSection).toHaveClass(/hidden/);
+    await expect(loginPage.signInButton).toBeVisible();
+    await expect(loginPage.productsHeading).not.toBeVisible();
     await expect(loginPage.errorMessage).toBeVisible();
   });
 
@@ -83,7 +85,7 @@ test.describe('Login Feature', () => {
   }) => {
     await loginPage.login('unknown@techshop.com', 'badpass999');
 
-    await expect(loginPage.loginSection).toBeVisible();
+    await expect(loginPage.signInButton).toBeVisible();
     await expect(loginPage.errorMessage).toBeVisible();
   });
 
@@ -101,7 +103,7 @@ test.describe('Login Feature', () => {
 
     // Session must persist: user stays on catalog and is not booted to login
     await expect(loginPage.productsHeading).toBeVisible();
-    await expect(loginPage.loginSection).toHaveClass(/hidden/);
+    await expect(loginPage.signInButton).not.toBeVisible();
   });
 
   test('TC-LOGIN-010: Login trims leading and trailing whitespace from email input', async ({
@@ -123,9 +125,8 @@ test.describe('Login Feature', () => {
       testCredentials.pass.charAt(0).toUpperCase() + testCredentials.pass.slice(1);
     await loginPage.login(testCredentials.email, wrongCasePassword);
 
-    await expect(loginPage.loginSection).not.toHaveClass(/hidden/);
-    await expect(loginPage.productsSection).toHaveClass(/hidden/);
+    await expect(loginPage.signInButton).toBeVisible();
+    await expect(loginPage.productsHeading).not.toBeVisible();
     await expect(loginPage.errorMessage).toBeVisible();
   });
 });
-

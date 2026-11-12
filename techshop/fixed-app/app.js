@@ -110,7 +110,12 @@ function fixedLogin() {
   markInput('login-pass', !pass);
   if (!user || !pass) valid = false;
 
-  if (!valid) return;
+  if (!valid) {
+    const errEl = document.getElementById('login-error');
+    document.getElementById('login-error-text').textContent = 'Please fill in all required fields.';
+    errEl.classList.remove('hidden');
+    return;
+  }
 
   if (!VALID_USERS.includes(user) || pass !== 'password123') {
     const errEl = document.getElementById('login-error');
@@ -123,6 +128,7 @@ function fixedLogin() {
 
   document.getElementById('login-error').classList.add('hidden');
   isLoggedIn = true;
+  sessionStorage.setItem('techshop_session', 'true');
   showPage('products');
 }
 
@@ -341,7 +347,16 @@ function fixedPlaceOrder() {
     { id: 'co-email',     errId: 'err-email',      test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) },
     { id: 'co-phone',     errId: 'err-phone',      test: v => /^[\d\s\-\+\(\)]{7,20}$/.test(v.trim()) },
     { id: 'co-card',      errId: 'err-card',       test: v => v.replace(/\s/g, '').length === 16 },
-    { id: 'co-expiry',    errId: 'err-expiry',     test: v => /^\d{2}\/\d{2}$/.test(v.trim()) },
+    { id: 'co-expiry',    errId: 'err-expiry',     test: v => {
+      const trimmed = v.trim();
+      if (!/^\d{2}\/\d{2}$/.test(trimmed)) return false;
+      const [mStr, yStr] = trimmed.split('/');
+      const month = parseInt(mStr, 10);
+      const year = 2000 + parseInt(yStr, 10);
+      if (month < 1 || month > 12) return false;
+      const now = new Date();
+      return year > now.getFullYear() || (year === now.getFullYear() && month >= (now.getMonth() + 1));
+    }},
     { id: 'co-cvv',       errId: 'err-cvv',        test: v => /^\d{3,4}$/.test(v.trim()) },
   ];
 
@@ -391,7 +406,7 @@ function fixedPlaceOrder() {
 
 function renderConfirmationPage() {
   if (!lastOrder) return;
-  document.getElementById('confirm-order-num').textContent = 'Order ' + lastOrder.number;
+  document.getElementById('confirm-order-num').textContent = 'Order #' + lastOrder.number;
 
   let itemsHTML = lastOrder.items.map(i =>
     `<div class="order-summary-row"><span>${i.name} × ${i.qty}</span><span>$${i.subtotal}</span></div>`
@@ -412,4 +427,10 @@ function renderConfirmationPage() {
 /* ══════════════════════════════════════════
    INIT
 ══════════════════════════════════════════ */
-showPage('login');
+if (sessionStorage.getItem('techshop_session') === 'true') {
+  isLoggedIn = true;
+  document.getElementById('main-navbar').classList.remove('hidden');
+  showPage('products');
+} else {
+  showPage('login');
+}

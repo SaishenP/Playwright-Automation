@@ -19,6 +19,22 @@ Always locate elements the way a user (or assistive tech) identifies them:
   * Brittle DOM/CSS path chains (e.g. `div > div:nth-child(3) > span`).
   * Fragile styling classes (e.g. `.css-1x8a9df`, `.btn-primary.mt-2`).
   * XPath expressions based on page structure.
+  * Speculative selector chains (e.g. `.order-ref, #order-ref, [data-testid="order-ref"]`).
+  * Raw implementation IDs for inputs with visible labels (e.g. `#co-firstname`, `#co-card`).
+* **Unassociated Form Fields & Container Scoping:** When form inputs lack explicit `<label for="...">` or `aria-label` bindings:
+  * Do NOT fall back to raw implementation IDs (`#co-firstname`, `#co-card`, `#co-expiry`).
+  * Instead, scope the input by its visible label within its container:
+    ```ts
+    // ✅ Resilient to ID/framework refactoring:
+    page.locator('.form-group', { hasText: 'First Name' }).getByRole('textbox')
+    ```
+  * Or locate by unique user-facing placeholder: `page.getByPlaceholder('MM/YY')`.
+  * In Page Objects, provide a semantic helper method:
+    ```ts
+    field(labelText: string): Locator {
+      return this.page.locator('.form-group', { hasText: labelText }).getByRole('textbox');
+    }
+    ```
 * **Missing Locators:** If an element lacks accessible semantics (e.g. an icon button with no text/aria-label, or an input without a label), flag it immediately and recommend adding an accessible attribute (`aria-label`, `label`, or `data-testid`).
 
 ---
@@ -57,6 +73,16 @@ Maintain clear modularity and high reusability:
   * Store locators as readonly properties initialized in the constructor.
   * Encapsulate multi-step interactions as descriptive action methods.
   * Do not put assertions inside Page Object methods unless performing standard transition guards.
+* **Declarative Form Handling & Journey Encapsulation:**
+  * **Eliminate Repetitive Field Ladders:** Never write ladders of `if (data.field !== undefined) await this.fieldInput.fill(data.field)` across Page Objects. Use declarative key-value mapping:
+    ```ts
+    async fillForm(fields: Record<string, string>) {
+      for (const [label, value] of Object.entries(fields)) {
+        await this.field(label).fill(value);
+      }
+    }
+    ```
+  * **Encapsulate Multi-Step User Journeys:** If reaching a feature requires navigating upstream steps (e.g. adding an item to the cart and proceeding to checkout), encapsulate that sequence in a Page Object helper method (e.g. `checkoutPage.navigateViaCart(productId)`) or fixture rather than duplicating the same 4-line flow in every test.
   ```ts
   export class LoginPage {
     readonly usernameInput: Locator;
@@ -146,4 +172,7 @@ Never duplicate boilerplate setup across tests or copy-paste authentication step
 2. **NO Hardcoded Secrets:** No plain credentials in test files.
 3. **NO Vacuous Assertions:** No assertions that verify static boilerplate rather than the dynamic outcome of the tested operation.
 4. **NO Test Interdependence:** No passing variables or state between `test()` blocks.
+5. **NO Raw Implementation IDs for Labeled Fields:** Do not use `#co-card`, `#co-firstname`, etc. when form fields have visible labels or placeholders.
+6. **NO Speculative Fallback Chains:** Do not use comma-separated speculative selector lists (`#error, .error, .alert-danger`).
+7. **NO Repetitive Multi-Step Journey Setup:** Do not copy-paste multi-line page traversal setup across test cases.
 
